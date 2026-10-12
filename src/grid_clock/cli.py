@@ -1,0 +1,167 @@
+"""One-command audio trace extraction and relative-time matching."""
+
+import argparse
+import json
+import sys
+from dataclasses import asdict
+from pathlib import Path
+
+import numpy as np
+
+from grid_clock.audio import load_audio
+from grid_clock.demo import DEMO_OFFSET_S, create_demo
+from grid_clock.match import match_traces
+from grid_clock.output import plot_traces, trace_summary, write_json, write_trace
+from grid_clock.trace import FrequencyTrace, TraceConfig, extract_trace
+
+
+def _trace_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--nominal", type=float, choices=[50, 60], default=50)
+    parser.add_argument("--harmonic", type=int, choices=[1, 2], default=1)
+    parser.add_argument("--window", type=float, default=16, help="STFT window in seconds")
+    parser.add_argument("--hop", type=float, default=1, help="Trace step in seconds")
+    parser.add_argument("--min-strength", type=float, default=20, help="Strength cutoff in dB")
+    parser.add_argument("--channel", type=int, help="Zero-based channel; default: highest RMS")
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="grid-clock",
+        description="Extract and compare power-grid hum. Never connect to mains.",
+    )
+    commands = parser.add_subparsers(dest="command", required=True)
+    trace = commands.add_parser("trace", help="Write a frequency trace, strength plot, and summary")
+    trace.add_argument("clip", type=Path)
+    trace.add_argument("--output", type=Path, default=Path("output/trace"))
+    _trace_options(trace)
+    match = commands.add_parser("match", help="Estimate when B started relative to A")
+    match.add_argument("a", type=Path)
+    match.add_argument("b", type=Path)
+    match.add_argument("--output", type=Path, default=Path("output/match"))
+    match.add_argument(
+        "--min-overlap",
+        type=float,
+        default=60,
+        help="Valid paired seconds required",
+    )
+    match.add_argument("--max-offset", type=float, help="Search within +/- this many seconds")
+    _trace_options(match)
+    demo = commands.add_parser("demo", help="Generate and match noisy synthetic hum clips")
+    demo.add_argument("--output", type=Path, default=Path("output/demo"))
+    demo.add_argument("--force", action="store_true", help="Replace existing demo audio files")
+    return parser
+
+
+def _compare(
+    a_path: Path,
+    b_path: Path,
+    output: Path,
+    config: TraceConfig,
+    *,
+    channel: int | None = None,
+    min_overlap_s: float = 60,
+    max_offset_s: float | None = None,
+    synthetic: bool = False,
+) -> tuple[dict, FrequencyTrace, FrequencyTrace]:
+    audio_a = load_audio(a_path, channel=channel)
+    audio_b = load_audio(b_path, channel=channel)
+    a = extract_trace(audio_a.samples, audio_a.sample_rate, config)
+    b = extract_trace(audio_b.samples, audio_b.sample_rate, config)
+    result = match_traces(a, b, min_overlap_s=min_overlap_s, max_offset_s=max_offset_s)
+    summary = asdict(result)
+    summary.update(
+        {
+            "offset_convention": "Positive offset means B started later than A.",
+            "a": {"source": str(a_path), **trace_summary(a, channel=audio_a.channel)},
+            "b": {"source": str(b_path), **trace_summary(b, channel=audio_b.channel)},
+            "screening": {
+                "min_overlap_s": min_overlap_s,
+                "max_offset_s": max_offset_s,
+                "min_correlation": 0.9,
+                "min_peak_margin": 0.05,
+                "min_drift_std_hz": 0.002,
+                "min_valid_fraction": 0.8,
+            },
+            "note": "Candidate alignment only. No absolute timestamp or forensic confidence.",
+        }
+    )
+    output.mkdir(parents=True, exist_ok=True)
+    write_trace(output / "a.trace.csv", a)
+    write_trace(output / "b.trace.csv", b)
+    label = "Synthetic demo" if synthetic else "Candidate alignment"
+    if not result.accepted:
+        label += " (not accepted)"
+    plot_traces(
+        output / "match.png",
+        a,
+        b,
+        offset_s=result.offset_s,
+        title=f"{label}: B starts {result.offset_s:+g} s relative to A",
+    )
+    return summary, a, b
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    try:
+        if args.command == "demo":
+            truth_times, truth_frequency = create_demo(args.output, force=args.force)
+            summary, a, b = _compare(
+                args.output / "a.wav",
+                args.output / "b.wav",
+                args.output,
+                TraceConfig(),
+                synthetic=True,
+            )
+            errors = [
+                np.abs(
+                    trace.frequency_hz[trace.valid]
+                    - np.interp(
+                        trace.time_s[trace.valid] + start,
+                        truth_times,
+                        truth_frequency,
+                    )
+                )
+                for trace, start in [(a, 0), (b, DEMO_OFFSET_S)]
+            ]
+            summary.update(
+                {
+                    "synthetic": True,
+                    "expected_offset_s": DEMO_OFFSET_S,
+                    "max_trace_error_hz": float(np.max(np.concatenate(errors))),
+                }
+            )
+            write_json(args.output / "match.json", summary)
+            print(json.dumps(summary, indent=2, allow_nan=False))
+            return 0 if summary["accepted"] else 1
+        config = TraceConfig(args.nominal, args.harmonic, args.window, args.hop, args.min_strength)
+        if args.command == "match":
+            summary, _, _ = _compare(
+                args.a,
+                args.b,
+                args.output,
+                config,
+                channel=args.channel,
+                min_overlap_s=args.min_overlap,
+                max_offset_s=args.max_offset,
+            )
+            write_json(args.output / "match.json", summary)
+            print(json.dumps(summary, indent=2, allow_nan=False))
+            return 0 if summary["accepted"] else 1
+        audio = load_audio(args.clip, channel=args.channel)
+        trace = extract_trace(audio.samples, audio.sample_rate, config)
+        args.output.mkdir(parents=True, exist_ok=True)
+        summary = trace_summary(trace, channel=audio.channel)
+        summary["source"] = str(args.clip)
+        write_trace(args.output / "trace.csv", trace)
+        plot_traces(args.output / "trace.png", trace)
+        write_json(args.output / "summary.json", summary)
+        print(json.dumps(summary, indent=2, allow_nan=False))
+        return 0 if np.any(trace.valid) else 1
+    except (ValueError, OSError) as error:
+        print(f"grid-clock: {error}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

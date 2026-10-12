@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "grid-clock"
+version = "0.1.0"
+description = "Extract and compare power-grid frequency traces from audio."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "matplotlib>=3.9",
+  "numpy>=2.1",
+  "scipy>=1.14",
+  "soundfile>=0.13",
+]
+
+[project.urls]
+Repository = "https://github.com/Guinerve/grid-clock"
+Issues = "https://github.com/Guinerve/grid-clock/issues"
+
+[project.scripts]
+grid-clock = "grid_clock.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8.3", "ruff>=0.9"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
