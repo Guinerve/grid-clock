@@ -218,5 +218,4 @@ Use a synthetic reproducer when possible. Do not upload private recordings.
 
 ## Licence
 
-A licence has not been selected. This repository does not yet grant an
-open-source licence for reuse or redistribution.
+MIT. See [LICENSE](LICENSE).
