@@ -1,4 +1,4 @@
-# Two-location recording test
+# Recording test in two places
 
 This test checks `grid-clock` on your own recordings. Two people record at the
 same time in two places on the same grid. Each person logs their start time on
@@ -16,7 +16,7 @@ microphone, probe, cable, or circuit to mains.**
 ## What you need
 
 - Two phones or recorders, one at each location.
-- A mains-powered appliance near each recorder. Try a laptop on its charger, a
+- An appliance on mains power near each recorder. Try a laptop on its charger, a
   fridge, a desk lamp, or a fluorescent light.
 - Both locations on the same synchronous grid. In Australia, mainland NEM
   states share one grid. Tasmania and Western Australia each run separately.
@@ -26,7 +26,7 @@ microphone, probe, cable, or circuit to mains.**
 ## Steps
 
 1. Turn off noise reduction and voice enhancement in the recording app if you
-   can. Use the highest-quality or lossless setting.
+   can. Use the highest quality or lossless setting.
 2. Put each recorder near its appliance. Keep the room quiet if possible.
 3. Agree on a rough start time, such as 7 pm. Each person starts on their own.
    An exact simultaneous start is not needed.
