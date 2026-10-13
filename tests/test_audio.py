@@ -50,3 +50,31 @@ def test_decodes_real_m4a_through_ffmpeg(tmp_path):
     frequency = np.fft.rfftfreq(audio.samples.size, 1 / rate)
     peak = np.argmax(np.abs(np.fft.rfft(audio.samples)))
     assert abs(frequency[peak] - 50) < 1
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="M4A decoding needs ffmpeg")
+def test_ffmpeg_decode_allows_rf64_so_long_recordings_are_not_truncated(tmp_path, monkeypatch):
+    # A plain WAV header holds at most 4 GiB. ffmpeg then writes a broken size and
+    # soundfile silently reads a shorter clip (6000 s of stereo read back as 5592 s).
+    rate = 8000
+    source = tmp_path / "source.wav"
+    encoded = tmp_path / "clip.m4a"
+    sf.write(source, 0.5 * np.sin(2 * np.pi * 50 * np.arange(rate) / rate), rate)
+    subprocess.run(
+        [shutil.which("ffmpeg"), "-nostdin", "-v", "error", "-i", str(source), str(encoded)],
+        check=True,
+        capture_output=True,
+        timeout=30,
+    )
+    commands = []
+    real_run = subprocess.run
+
+    def recording_run(command, **kwargs):
+        commands.append(command)
+        return real_run(command, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", recording_run)
+    load_audio(encoded)
+    [command] = commands
+    position = command.index("-rf64")
+    assert command[position + 1] == "auto"

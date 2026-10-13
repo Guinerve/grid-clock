@@ -47,6 +47,10 @@ def load_audio(path: str | Path, *, channel: int | None = None) -> Audio:
                         "-vn",
                         "-c:a",
                         "pcm_f64le",
+                        # A plain WAV header stops at 4 GiB (about 93 minutes of
+                        # 48 kHz stereo). Past that, soundfile reads a shorter clip.
+                        "-rf64",
+                        "auto",
                         str(decoded),
                     ],
                     check=True,
