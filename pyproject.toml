@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "grid-clock"
 version = "0.2.0"
-description = "Extract and compare power-grid frequency traces from audio."
+description = "Line up audio recordings in time using the hum of the power grid."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"

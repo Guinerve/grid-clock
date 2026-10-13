@@ -55,9 +55,9 @@ def match_traces(
     if not np.isfinite(min_overlap_s) or min_overlap_s <= 0:
         raise ValueError("Minimum overlap must be positive and finite.")
     if max_offset_s is not None and (not np.isfinite(max_offset_s) or max_offset_s < 0):
-        raise ValueError("Maximum offset must be non-negative and finite.")
+        raise ValueError("Maximum offset must be a finite number of 0 or more.")
     if not 0 <= min_correlation <= 1 or not 0 <= min_peak_margin <= 2:
-        raise ValueError("Invalid correlation or peak-margin threshold.")
+        raise ValueError("Correlation or peak margin threshold is out of range.")
     if a.time_s.size < 2 or b.time_s.size < 2:
         raise InsufficientHumError("Not enough trace frames to compare.")
     for trace in (a, b):

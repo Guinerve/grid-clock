@@ -23,12 +23,14 @@ class TraceConfig:
         if self.nominal_hz not in (50, 60) or self.harmonic not in (1, 2):
             raise ValueError("Use a 50 or 60 Hz grid and harmonic 1 or 2.")
         if self.window_s < 4 or not 0 < self.hop_s <= self.window_s:
-            raise ValueError("Window must be at least 4 s; hop must be positive and <= window.")
+            raise ValueError(
+                "Window must be at least 4 s. Hop must be above 0 and no longer than the window."
+            )
         if self.min_strength_db < 0:
-            raise ValueError("Minimum strength must be non-negative.")
+            raise ValueError("Minimum strength must be 0 dB or more.")
         for value in (self.window_s, self.hop_s):
             if value > np.iinfo(np.int64).max / 500:
-                raise ValueError("Window and hop exceed the supported sample-count range.")
+                raise ValueError("Window and hop are too large to handle.")
             if not np.isclose(value * 500, round(value * 500), rtol=0, atol=1e-8):
                 raise ValueError("Window and hop must be multiples of 0.002 s.")
 
@@ -54,7 +56,7 @@ def extract_trace(
     config = config or TraceConfig()
     samples = np.asarray(samples, dtype=np.float64)
     if samples.ndim != 1 or not samples.size or not np.all(np.isfinite(samples)):
-        raise ValueError("Audio must be a non-empty, finite mono signal.")
+        raise ValueError("Audio must be one channel of finite samples, and not empty.")
     centre = config.nominal_hz * config.harmonic
     if not isinstance(sample_rate, (int, np.integer)) or sample_rate <= 2 * (centre + 2):
         raise ValueError("Sample rate is too low for the selected hum band.")

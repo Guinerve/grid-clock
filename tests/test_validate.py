@@ -146,10 +146,10 @@ def test_accepted_control_is_a_false_match_and_missing_hum_is_no_decision():
     [
         ({"logged_start": "2026-10-14T19:00:00"}, "UTC offset"),
         ({"logged_start": "yesterday"}, "ISO 8601"),
-        ({"start_uncertainty_s": -1}, "non-negative"),
-        ({"start_uncertainty_s": True}, "non-negative"),
+        ({"start_uncertainty_s": -1}, "0 or more"),
+        ({"start_uncertainty_s": True}, "0 or more"),
         ({"id": "office"}, "unique"),
-        ({"location": ""}, "non-empty"),
+        ({"location": ""}, "Empty text"),
         ({"logged_start": None}, "ISO 8601"),
     ],
 )

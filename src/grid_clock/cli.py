@@ -24,49 +24,66 @@ from grid_clock.validate import load_manifest, validate_recordings, write_pairs
 
 
 def _trace_options(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--nominal", type=float, choices=[50, 60], default=50)
-    parser.add_argument("--harmonic", type=int, choices=[1, 2], default=1)
-    parser.add_argument("--window", type=float, default=16, help="STFT window in seconds")
+    parser.add_argument(
+        "--nominal", type=float, choices=[50, 60], default=50, help="Grid frequency in Hz"
+    )
+    parser.add_argument(
+        "--harmonic",
+        type=int,
+        choices=[1, 2],
+        default=1,
+        help="1 tracks the fundamental, 2 the second harmonic (try 2 for phones)",
+    )
+    parser.add_argument("--window", type=float, default=16, help="Analysis window in seconds")
     parser.add_argument("--hop", type=float, default=1, help="Trace step in seconds")
-    parser.add_argument("--min-strength", type=float, default=20, help="Strength cutoff in dB")
-    parser.add_argument("--channel", type=int, help="Zero-based channel; default: highest RMS")
+    parser.add_argument(
+        "--min-strength", type=float, default=20, help="Lowest peak to noise ratio in dB"
+    )
+    parser.add_argument(
+        "--channel", type=int, help="Audio channel, counting from 0 (default: highest RMS)"
+    )
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="grid-clock",
-        description="Extract and compare power-grid hum. Never connect to mains.",
+        description=(
+            "Line up audio recordings using the hum of the power grid. "
+            "Gives relative offsets only. Never connect anything to mains."
+        ),
     )
     commands = parser.add_subparsers(dest="command", required=True)
     trace = commands.add_parser("trace", help="Write a frequency trace, strength plot, and summary")
-    trace.add_argument("clip", type=Path)
-    trace.add_argument("--output", type=Path, default=Path("output/trace"))
+    trace.add_argument("clip", type=Path, help="Audio file (WAV, FLAC, or M4A with ffmpeg)")
+    trace.add_argument("--output", type=Path, default=Path("output/trace"), help="Output folder")
     _trace_options(trace)
     match = commands.add_parser("match", help="Estimate when B started relative to A")
-    match.add_argument("a", type=Path)
-    match.add_argument("b", type=Path)
-    match.add_argument("--output", type=Path, default=Path("output/match"))
+    match.add_argument("a", type=Path, help="First audio file (clip A)")
+    match.add_argument("b", type=Path, help="Second audio file (clip B)")
+    match.add_argument("--output", type=Path, default=Path("output/match"), help="Output folder")
     validate = commands.add_parser(
         "validate",
         help="Score matches against independently logged start times",
     )
     validate.add_argument("manifest", type=Path, help="JSON list of recordings and logged starts")
-    validate.add_argument("--output", type=Path, default=Path("output/validation"))
+    validate.add_argument(
+        "--output", type=Path, default=Path("output/validation"), help="Output folder"
+    )
     for command in (match, validate):
         command.add_argument(
             "--min-overlap",
             type=float,
             default=MIN_OVERLAP_S,
-            help="Valid paired seconds required",
+            help="Valid seconds that both clips must share",
         )
         command.add_argument(
             "--max-offset",
             type=float,
-            help="Search within +/- this many seconds",
+            help="Search only within plus or minus this many seconds",
         )
         _trace_options(command)
     demo = commands.add_parser("demo", help="Generate and match noisy synthetic hum clips")
-    demo.add_argument("--output", type=Path, default=Path("output/demo"))
+    demo.add_argument("--output", type=Path, default=Path("output/demo"), help="Output folder")
     demo.add_argument("--force", action="store_true", help="Replace existing demo audio files")
     return parser
 

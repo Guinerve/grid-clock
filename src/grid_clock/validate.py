@@ -69,7 +69,7 @@ def score_pair(
     """
     kind = DIFFERENT_TIME if expected_offset_s is None else SIMULTANEOUS
     if kind == SIMULTANEOUS and (tolerance_s is None or tolerance_s < 0):
-        raise ValueError("A simultaneous pair needs a non-negative offset tolerance.")
+        raise ValueError("A simultaneous pair needs an offset tolerance of 0 or more.")
     try:
         result = match_traces(
             a,
@@ -177,7 +177,9 @@ def load_manifest(path: Path) -> list[Recording]:
         if not all(
             isinstance(entry[key], str) and entry[key] for key in ("id", "path", "location")
         ):
-            raise ValueError(f"{where} needs non-empty text for id, path, and location.")
+            raise ValueError(
+                f"{where} needs text for id, path, and location. Empty text is not allowed."
+            )
         try:
             start = datetime.fromisoformat(entry["logged_start"])
         except (TypeError, ValueError) as error:
@@ -191,7 +193,7 @@ def load_manifest(path: Path) -> list[Recording]:
             or not np.isfinite(uncertainty)
             or uncertainty < 0
         ):
-            raise ValueError(f"{where} start_uncertainty_s must be a non-negative number.")
+            raise ValueError(f"{where} start_uncertainty_s must be a number of 0 or more.")
         recordings.append(
             Recording(
                 entry["id"],
@@ -279,7 +281,7 @@ def validate_recordings(
     if not summary[SIMULTANEOUS]["correct"]:
         warnings.append("No simultaneous pair produced an accepted offset within tolerance.")
     if not summary[DIFFERENT_TIME]["rejected"]:
-        warnings.append("No different-time control was scored and rejected.")
+        warnings.append("No control recorded at a different time was scored and rejected.")
     if summary["false_matches"]:
         warnings.append("At least one false match was accepted.")
     return {

@@ -49,7 +49,7 @@ def trace_summary(trace: FrequencyTrace, *, channel: int) -> dict:
         "window_s": trace.config.window_s,
         "hop_s": trace.config.hop_s,
         "min_strength_db": trace.config.min_strength_db,
-        "strength_note": "Peak-to-nearby-noise ratio; not a confidence probability.",
+        "strength_note": "Ratio of the peak to nearby noise. It is not a confidence probability.",
     }
 
 
