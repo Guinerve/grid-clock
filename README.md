@@ -5,17 +5,19 @@
 [![Tests](https://github.com/Guinerve/grid-clock/actions/workflows/ci.yml/badge.svg)](https://github.com/Guinerve/grid-clock/actions/workflows/ci.yml)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
 
-![Two synthetic hum traces aligned at a known 37-second offset](assets/synthetic-match.png)
+![A real phone recording aligned with a simultaneous mains-frequency log](assets/real-match.png)
 
-**Status:** v0.1 implemented; synthetic tests pass. Real-recording validation is pending.
+**Status:** v0.2. Tested on 130 real phone and recorder clips. The two-location
+clip-to-clip test has not been run yet. No absolute timestamps.
 
-Mains-powered devices can produce a faint 50 Hz hum in microphone recordings.
-Grid frequency changes over time. Recordings from the same synchronous grid can
-share that frequency pattern. This technique is called Electrical Network
+Mains-powered devices can produce a faint hum in microphone recordings. Grid
+frequency drifts slightly over time. Recordings from the same synchronous grid
+can share that drift pattern. This technique is called Electrical Network
 Frequency (ENF) analysis.
 
 `grid-clock` extracts the pattern and estimates the relative start time of two
-clips. It does not give an absolute timestamp. That needs a dated reference log.
+clips. It does not give an absolute timestamp. That needs a dated reference
+log, and none is integrated or validated.
 
 ## Safety
 
@@ -26,7 +28,6 @@ A laptop on its charger, a fridge, or a desk lamp may produce usable hum.
 ## Run the demo
 
 Install [uv](https://docs.astral.sh/uv/). Use Python 3.11 or later.
-Clone the repository and run the demo:
 
 ```bash
 git clone https://github.com/Guinerve/grid-clock.git
@@ -34,72 +35,54 @@ cd grid-clock
 uv run grid-clock demo
 ```
 
-`uv` installs the Python dependencies on the first run. The synthetic demo does
-not need `ffmpeg`, a microphone, or a reference dataset.
+`uv` installs the dependencies on the first run. The demo does not need
+`ffmpeg`, a microphone, or a reference dataset.
 
-This creates two four-minute synthetic WAV clips with independent noise.
-Clip B starts 37 seconds after clip A. The command extracts both traces and
-writes these files to `output/demo/`:
+The demo creates two seven-minute synthetic WAV clips with independent noise.
+Clip B starts 37 seconds after clip A. The command writes these files to
+`output/demo/`:
 
 - `a.wav`, `b.wav`: generated audio, not real grid recordings.
 - `a.trace.csv`, `b.trace.csv`: frequency, strength, and valid-frame flags.
 - `match.png`: aligned traces and their signal strength.
 - `match.json`: measured offset, scores, settings, and known synthetic truth.
 
-The command prints JSON. In the local test run, it recovered `+37 s` with a
-correlation of `0.9942`. The largest frequency error across both clips was
-`0.00206 Hz`. These results apply to the fixed synthetic fixture only.
+In the local run it recovered `+37 s` with a correlation of `0.9978`. The
+largest frequency error was `0.0025 Hz`. Add `--force` to replace existing
+demo audio, or use `--output <directory>`.
 
-Open `output/demo/match.png` to view the result. To replace existing demo audio,
-run `uv run grid-clock demo --force`. Without `--force`, the demo refuses to
-overwrite `a.wav` or `b.wav`. Use `--output <directory>` for a separate run.
+![Two synthetic hum traces aligned at a known 37-second offset](assets/synthetic-match.png)
 
 ## Use your own recordings
 
 ```bash
-uv run grid-clock trace clip.wav --output output/clip
-uv run grid-clock match a.wav b.wav --output output/pair
+uv run grid-clock trace clip.wav --harmonic 2 --output output/clip
+uv run grid-clock match a.m4a b.m4a --harmonic 2 --output output/pair
 ```
 
-`trace` writes `trace.csv`, `trace.png`, and `summary.json`.
-When a candidate can be scored, `match` writes `a.trace.csv`, `b.trace.csv`,
-`match.png`, and `match.json`. This includes candidates rejected by the screening
-thresholds. An output directory can be changed with `--output`.
-Repeating `trace` or `match` replaces its generated files in that directory.
-An input or matching error can leave files from a previous run unchanged.
-Check the exit code before using output files.
+`trace` writes `trace.csv`, `trace.png`, and `summary.json`. When a candidate
+can be scored, `match` writes `a.trace.csv`, `b.trace.csv`, `match.png`, and
+`match.json`, including rejected candidates. Repeated runs replace files in the
+output directory. A failed run can leave older files in place, so check the
+exit code.
 
-WAV and FLAC use `soundfile`. M4A/AAC and other unsupported formats need
-`ffmpeg` on `PATH`. Install it separately if needed.
+**Start with `--harmonic 2`.** Phone microphones usually filter out 50 Hz. In
+the real-recording benchmark, the 100 Hz harmonic gave usable traces and the
+fundamental gave none. Use `--nominal 60` on a 60 Hz grid.
 
-For example, use `brew install ffmpeg` on macOS, or
-`sudo apt-get install ffmpeg` on Debian/Ubuntu.
+**Record at least 8 minutes.** A match needs 300 s of valid, overlapping hum by
+default, so each clip needs at least 315 s even at zero offset. Shorter
+overlaps produced many false matches on real data.
 
-If the 50 Hz fundamental is weak, try the 100 Hz harmonic:
+WAV and FLAC use `soundfile`. M4A/AAC and other formats need `ffmpeg` on
+`PATH`, for example `brew install ffmpeg` or `sudo apt-get install ffmpeg`.
 
-```bash
-uv run grid-clock trace clip.wav --harmonic 2 --output output/harmonic
-```
+The loader picks the channel with the highest RMS level and does not average
+channels, since opposite-phase hum could cancel. Use `--channel 1` to choose
+the second channel.
 
-Use `--nominal 60` for a 60 Hz grid. Use `--channel 1` to select the second audio
-channel. By default, the loader selects the channel with the highest RMS level.
-It does not average channels because opposite-phase hum could cancel.
-The loudest channel is not always the one with the clearest hum. Use `trace`
-with each channel if the default produces few valid frames.
-
-For a bounded offset search, run:
-
-```bash
-uv run grid-clock match a.wav b.wav --max-offset 90 --min-overlap 60
-```
-
-A positive offset means B started later than A. For example, `+37` means
-`a[37 seconds]` aligns with `b[0 seconds]`. The offset resolution is the trace
-hop, which is one second by default.
-
-Use at least 16 seconds of audio for a trace. Matching needs at least 60 valid
-paired trace frames by default, so each clip needs at least 75 seconds of audio
-even at zero offset. Record several minutes to allow overlap after alignment.
+A positive offset means B started later than A: `+37` means `a[37 s]` aligns
+with `b[0 s]`. The offset resolution is the trace hop, one second by default.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -108,52 +91,119 @@ even at zero offset. Record several minutes to allow overlap after alignment.
 | `--window` | `16` | Analysis window in seconds; minimum `4` |
 | `--hop` | `1` | Trace step in seconds; positive and no larger than the window |
 | `--min-strength` | `20` | Minimum peak-to-nearby-noise ratio in dB |
-| `--channel` | Highest RMS | Zero-based audio channel; applies to both clips in `match` |
-| `--min-overlap` | `60` | Minimum valid paired seconds; `match` only |
-| `--max-offset` | Full range | Search within ±this many seconds; `match` only |
+| `--channel` | Highest RMS | Zero-based audio channel; applies to every clip |
+| `--min-overlap` | `300` | Minimum valid paired seconds; `match` and `validate` |
+| `--max-offset` | Full range | Search within ±this many seconds; `match` and `validate` |
 
-Window and hop values must be multiples of 0.002 seconds. Trace options apply
-to `trace` and `match`; `demo` uses fixed settings.
+Window and hop must be multiples of 0.002 seconds. `demo` uses fixed settings.
 
-Exit codes: `0` means usable trace frames or an accepted candidate match;
-`1` means no usable trace frames or a rejected candidate match;
-`2` means invalid input, a decode failure, or insufficient changing hum to compare.
-Run `uv run grid-clock --help` for the command list.
+Exit codes: `0` means usable trace frames, an accepted match, or a passed
+validation. `1` means no usable frames, a rejected match, or a failed
+validation. `2` means invalid input, a decode failure, or not enough changing
+hum to compare.
+
+## Test it with two locations
+
+`grid-clock validate` checks the matcher against start times that people
+logged themselves. List the recordings in a JSON manifest:
+
+```json
+{
+  "recordings": [
+    {"id": "home", "path": "home.m4a", "location": "home",
+     "logged_start": "2026-10-18T19:00:04+11:00", "start_uncertainty_s": 2},
+    {"id": "office", "path": "office.m4a", "location": "office",
+     "logged_start": "2026-10-18T19:00:31+11:00", "start_uncertainty_s": 2},
+    {"id": "control", "path": "control.m4a", "location": "home",
+     "logged_start": "2026-10-19T08:15:00+11:00", "start_uncertainty_s": 2}
+  ]
+}
+```
+
+```bash
+uv run grid-clock validate manifest.json --harmonic 2 --output output/two-location
+```
+
+Pairs whose logged times overlap are scored against the logged difference.
+Pairs logged at different times are negative controls. The command reports
+offset errors and false matches in `validation.json` and `pairs.csv`. It
+uses logged times only as differences and never writes them out.
+
+Follow [docs/two-location-protocol.md](docs/two-location-protocol.md) for the
+recording steps. A full example is in
+[examples/two-location.manifest.json](examples/two-location.manifest.json).
+
+## How I know it's right
+
+Full details and commands are in [docs/validation.md](docs/validation.md).
+
+**Real recordings.** The public [ENF-WHU](https://github.com/ghua-ac/ENF-WHU-Dataset)
+dataset pairs 130 phone and recorder clips with simultaneous mains-frequency
+logs. Clips from different days act as negative controls. Thresholds were
+chosen on the odd-numbered clips and checked on the even-numbered clips.
+
+| Test (100 Hz harmonic) | Result |
+| --- | --- |
+| Clip vs simultaneous mains log | 44 of 130 correct, 0 wrong offsets, 82 too weak to score |
+| Offset error of accepted pairs | median 2 s, max 4 s |
+| Held-out half only | 20 of 65 correct, 0 wrong offsets |
+| Different-day controls | 0 false matches in 6,598 scored pairs |
+| Clip searched across a 24-hour log | 41 of 113 found within 4 s, 0 wrong offsets |
+| 50 Hz fundamental | 0 of 130 clips usable |
+
+Version 0.1 used a 60 s overlap and r ≥ 0.9. On the same data, it accepted
+1,815 of 7,495 scored different-day controls. Version 0.2 needs 300 s and
+r ≥ 0.97.
+
+**Not yet tested.** Two microphone recordings made at the same time in two
+places. Every ENF-WHU pair compares a microphone with a direct mains log. All
+clips come from one city on one grid.
+
+**Synthetic.** `uv run pytest` covers known drift in noise, both harmonics,
+50 and 60 Hz grids, positive and negative offsets, missing frames, unrelated
+and periodic traces, M4A decoding, manifest checks, and scoring rules.
 
 ## How it works
 
 1. Decode one audio channel and resample it to 500 Hz with anti-alias filtering.
 2. Band-pass around the selected fundamental or second harmonic.
-3. Apply a Hann-window STFT with 16-second windows and one-second steps.
-   Compute FFTs in small batches to bound spectral memory use.
-4. Search within ±0.2 Hz of the nominal grid frequency. Use a zero-padded FFT
-   and quadratic interpolation of log power to estimate the peak.
-5. Divide harmonic estimates by the harmonic number. Report the grid frequency,
-   not the 100/120 Hz carrier frequency. Trace times are window centres.
-6. Screen each frame with the peak-to-nearby-noise power ratio. The default
-   cutoff is 20 dB. Invalid frequency values are blank in CSV output.
-7. Compare traces with overlap-normalised Pearson correlation at each offset.
-   Missing frames do not contribute to the score.
+3. Apply a Hann-window STFT with 16-second windows and one-second steps, in
+   small batches to bound memory.
+4. Search within ±0.2 Hz of the nominal frequency. A zero-padded FFT and
+   quadratic interpolation of log power estimate the peak.
+5. Divide harmonic estimates by the harmonic number, so traces always show
+   grid frequency. Trace times are window centres.
+6. Mark a frame valid when its peak-to-nearby-noise ratio is at least 20 dB.
+   Invalid frequencies are blank in CSV output.
+7. Compute Pearson correlation at every offset over paired valid frames only.
 
-Matching requires at least 60 paired valid frames at the default hop, 80% valid
-coverage in the overlap, and at least 0.002 Hz drift standard deviation in each
-trace. An accepted candidate needs correlation ≥0.9. Its score must exceed the
-best competing offset outside one window length by at least 0.05.
-`valid_overlap_s` is the paired valid frame count multiplied by the hop.
-Acceptance applies only within the eligible search range. If no competing
-offset is eligible, `competing_correlation` is `null` and the result states that
-uniqueness was not assessed. A restricted search can hide other plausible offsets.
+An offset is eligible with at least 300 valid paired seconds, 80% valid
+coverage in the overlap, and at least 0.002 Hz drift standard deviation on
+each side. The best eligible offset is accepted when r ≥ 0.97 and it beats the
+best competitor more than one window away by at least 0.05. If no competitor is
+eligible, `competing_correlation` is `null` and the result says uniqueness was
+not assessed. A restricted `--max-offset` can hide other plausible offsets.
 
-The strength band in the plot is a signal-screening aid. It is not an error band
-or a confidence probability. Adjacent windows overlap and are not independent.
-The match thresholds are heuristics, not forensic confidence levels.
+The strength band in the plot is a screening aid, not an error band or a
+probability. Adjacent windows overlap and are not independent. The thresholds
+are heuristics, not forensic confidence levels.
 
-## Stack
+## Limits
 
-Python (uv), NumPy, SciPy, soundfile, matplotlib, pytest.
-The CLI uses `argparse`. Plots use a headless backend; no web server is needed.
+- Recordings need detectable hum. Many microphones remove low frequencies, and
+  battery-powered setups may pick up nothing. Most real clips were too weak to
+  score.
+- A constant tone carries no time information. An unrelated oscillator can
+  look like hum, so a strong tone is not proof of grid origin.
+- Repeating or slowly drifting patterns can create several plausible offsets.
+  Searching many offsets increases the chance of a false match.
+- Compression, noise, local interference, and sample-clock drift reduce
+  accuracy. Clock-drift correction and harmonic fusion are not implemented.
+- Files are decoded into memory. This is not a streaming recorder.
+- No dated reference source is integrated, so there are no absolute
+  timestamps. Nothing here has been validated for forensic use.
 
-## Checks
+## Development
 
 ```bash
 uv sync --locked
@@ -163,59 +213,31 @@ uv run ruff format --check .
 uv build
 ```
 
-Tests cover known drift buried
-in noise, the second harmonic on a 60 Hz grid, silence, noise-only audio,
-positive and negative offsets, missing frames, unrelated traces, periodic
-ambiguity, stereo channel selection, CLI artifacts, and actual M4A decoding.
-They also cover 44.1/48 kHz resampling, overwrite protection, invalid settings,
-restricted searches, and unsuccessful match exit codes.
-The M4A test is skipped when `ffmpeg` is absent. The noisy sinusoidal drift test
-requires a maximum frequency error below 0.005 Hz.
+CI runs lint, formatting, tests, and the demo on Python 3.11–3.13. The real
+benchmark needs about 3.3 GB of downloads and is run by hand:
 
-`.github/workflows/ci.yml` runs lint, formatting, tests, and the demo on
-Python 3.11–3.13. It retains demo artifacts. The badge above links to the latest run.
-
-## How I know it's right
-
-- Synthetic extraction and known-offset tests pass. See the measured demo result above.
-- Real simultaneous recordings have not been tested. Record at least five minutes
-  near enclosed appliances in two locations. Log their start times independently.
-  Compare the measured offset with that log.
-- A different-time recording is still needed as a real negative control.
-- A Tasmania or WA recording could test a different synchronous grid against a
-  mainland recording. This experiment has not been done. Do not treat a low score
-  as proof of origin or a high score as proof that two recordings share a time.
-
-## Limits
-
-- Recordings need detectable hum. Many microphones remove low frequencies.
-  Battery-powered recordings may have no usable signal.
-- A constant tone gives no time fingerprint. An unrelated device oscillator can
-  resemble hum. Strong tones are not proof of grid origin.
-- Long windows smooth fast changes. The one-second hop does not give independent
-  one-second frequency measurements.
-- Repeating patterns can yield several plausible offsets. A high score alone
-  does not establish a match. Searching many offsets can produce false matches.
-- Compression, noise, local interference, and sample-clock drift can reduce
-  accuracy. Clock-drift correction and automatic harmonic fusion are not implemented.
-- Files are decoded into memory. FFT batching limits spectral memory, not audio
-  file memory. This version is not a streaming recorder.
-- Absolute timestamps need a dated reference log. This version has no reference
-  data source and has not been validated for forensic use.
+```bash
+uv run python scripts/fetch_enf_whu.py --one-day
+uv run python scripts/benchmark_enf_whu.py --one-day
+```
 
 ## Next steps
 
-- Validate simultaneous recordings from two locations and a different-time control.
+- Run the two-location test with a different-time control and add the result
+  to [docs/validation.md](docs/validation.md).
 - Measure sensitivity to compression, interference, and sample-clock drift.
-- Check whether a dated reference source, such as AEMO data, has sufficient
-  resolution and coverage for absolute-time matching.
+- Check whether a dated reference source, such as AEMO data, has the resolution
+  and coverage for absolute-time matching. Absolute timestamps stay out until
+  one works.
 
 ## Contributing
 
-Use the checks above before opening a pull request. For a bug report, include
-the command, Python version, audio format, sample rate, and error output.
-Use a synthetic reproducer when possible. Do not upload private recordings.
+Run the development checks before opening a pull request. For a bug report,
+include the command, Python version, audio format, sample rate, and error
+output. Use a synthetic reproducer when possible. Do not upload private
+recordings.
 
 ## Licence
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). The ENF-WHU dataset is MIT-licensed by its
+authors. It is downloaded on demand, not redistributed here.

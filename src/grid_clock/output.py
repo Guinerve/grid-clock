@@ -60,6 +60,7 @@ def plot_traces(
     *,
     offset_s: float = 0,
     title: str = "Grid frequency candidate",
+    labels: tuple[str, str] = ("Clip A", "Clip B (aligned)"),
 ) -> None:
     with plt.rc_context(
         {
@@ -85,9 +86,9 @@ def plot_traces(
         )
         try:
             fig.suptitle(title, fontsize=17, fontweight="bold")
-            traces = [(a, 0, "#51dac7", "Clip A" if b is not None else "Hum trace")]
+            traces = [(a, 0, "#51dac7", labels[0] if b is not None else "Hum trace")]
             if b is not None:
-                traces.append((b, offset_s, "#b99aff", "Clip B (aligned)"))
+                traces.append((b, offset_s, "#b99aff", labels[1]))
             for trace, shift, colour, label in traces:
                 time = trace.time_s + shift
                 frequency_axis.plot(time, trace.frequency_hz, color=colour, label=label, lw=2)

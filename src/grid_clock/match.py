@@ -7,6 +7,18 @@ from scipy import signal
 
 from grid_clock.trace import FrequencyTrace
 
+# Chosen on the odd-numbered ENF-WHU clips and checked on the even-numbered ones.
+# See docs/validation.md. They are screening heuristics, not confidence levels.
+MIN_OVERLAP_S = 300
+MIN_CORRELATION = 0.97
+MIN_PEAK_MARGIN = 0.05
+MIN_DRIFT_STD_HZ = 0.002
+MIN_VALID_FRACTION = 0.8
+
+
+class InsufficientHumError(ValueError):
+    """Valid input that lacks enough paired, changing hum to score any offset."""
+
 
 @dataclass(frozen=True)
 class MatchResult:
@@ -22,17 +34,18 @@ def match_traces(
     a: FrequencyTrace,
     b: FrequencyTrace,
     *,
-    min_overlap_s: float = 60,
+    min_overlap_s: float = MIN_OVERLAP_S,
     max_offset_s: float | None = None,
-    min_correlation: float = 0.9,
-    min_peak_margin: float = 0.05,
+    min_correlation: float = MIN_CORRELATION,
+    min_peak_margin: float = MIN_PEAK_MARGIN,
 ) -> MatchResult:
     """Positive offset means B started later than A.
 
     Compute Pearson correlation separately at each lag, using only paired
     valid estimates. Require 80% valid coverage and >= 0.002 Hz standard
     deviation on both sides. Compare competing lags beyond one window length.
-    Acceptance thresholds are heuristics, not forensic confidence levels.
+    Short overlaps of slowly drifting hum correlate by chance, so the default
+    overlap is five minutes. Thresholds are heuristics, not confidence levels.
     """
     if a.config.nominal_hz != b.config.nominal_hz:
         raise ValueError("Traces must use the same nominal grid frequency.")
@@ -46,7 +59,7 @@ def match_traces(
     if not 0 <= min_correlation <= 1 or not 0 <= min_peak_margin <= 2:
         raise ValueError("Invalid correlation or peak-margin threshold.")
     if a.time_s.size < 2 or b.time_s.size < 2:
-        raise ValueError("Not enough trace frames to compare.")
+        raise InsufficientHumError("Not enough trace frames to compare.")
     for trace in (a, b):
         if not np.allclose(np.diff(trace.time_s), hop, rtol=0, atol=1e-8):
             raise ValueError("Trace timestamps must have the configured regular hop.")
@@ -77,14 +90,14 @@ def match_traces(
     offsets = signal.correlation_lags(x.size, y.size) * hop + a.time_s[0] - b.time_s[0]
     eligible = (
         (count * hop >= min_overlap_s)
-        & (count >= 0.8 * possible)
-        & (variance_x / safe_count >= 0.002**2)
-        & (variance_y / safe_count >= 0.002**2)
+        & (count >= MIN_VALID_FRACTION * possible)
+        & (variance_x / safe_count >= MIN_DRIFT_STD_HZ**2)
+        & (variance_y / safe_count >= MIN_DRIFT_STD_HZ**2)
     )
     if max_offset_s is not None:
         eligible &= np.abs(offsets) <= max_offset_s
     if not np.any(eligible):
-        raise ValueError(
+        raise InsufficientHumError(
             "Not enough valid, changing hum for the required overlap and offset range."
         )
     best = int(np.argmax(np.where(eligible, scores, -np.inf)))

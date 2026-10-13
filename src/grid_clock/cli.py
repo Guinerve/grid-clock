@@ -10,9 +10,17 @@ import numpy as np
 
 from grid_clock.audio import load_audio
 from grid_clock.demo import DEMO_OFFSET_S, create_demo
-from grid_clock.match import match_traces
+from grid_clock.match import (
+    MIN_CORRELATION,
+    MIN_DRIFT_STD_HZ,
+    MIN_OVERLAP_S,
+    MIN_PEAK_MARGIN,
+    MIN_VALID_FRACTION,
+    match_traces,
+)
 from grid_clock.output import plot_traces, trace_summary, write_json, write_trace
 from grid_clock.trace import FrequencyTrace, TraceConfig, extract_trace
+from grid_clock.validate import load_manifest, validate_recordings, write_pairs
 
 
 def _trace_options(parser: argparse.ArgumentParser) -> None:
@@ -38,14 +46,25 @@ def _parser() -> argparse.ArgumentParser:
     match.add_argument("a", type=Path)
     match.add_argument("b", type=Path)
     match.add_argument("--output", type=Path, default=Path("output/match"))
-    match.add_argument(
-        "--min-overlap",
-        type=float,
-        default=60,
-        help="Valid paired seconds required",
+    validate = commands.add_parser(
+        "validate",
+        help="Score matches against independently logged start times",
     )
-    match.add_argument("--max-offset", type=float, help="Search within +/- this many seconds")
-    _trace_options(match)
+    validate.add_argument("manifest", type=Path, help="JSON list of recordings and logged starts")
+    validate.add_argument("--output", type=Path, default=Path("output/validation"))
+    for command in (match, validate):
+        command.add_argument(
+            "--min-overlap",
+            type=float,
+            default=MIN_OVERLAP_S,
+            help="Valid paired seconds required",
+        )
+        command.add_argument(
+            "--max-offset",
+            type=float,
+            help="Search within +/- this many seconds",
+        )
+        _trace_options(command)
     demo = commands.add_parser("demo", help="Generate and match noisy synthetic hum clips")
     demo.add_argument("--output", type=Path, default=Path("output/demo"))
     demo.add_argument("--force", action="store_true", help="Replace existing demo audio files")
@@ -59,7 +78,7 @@ def _compare(
     config: TraceConfig,
     *,
     channel: int | None = None,
-    min_overlap_s: float = 60,
+    min_overlap_s: float = MIN_OVERLAP_S,
     max_offset_s: float | None = None,
     synthetic: bool = False,
 ) -> tuple[dict, FrequencyTrace, FrequencyTrace]:
@@ -77,10 +96,10 @@ def _compare(
             "screening": {
                 "min_overlap_s": min_overlap_s,
                 "max_offset_s": max_offset_s,
-                "min_correlation": 0.9,
-                "min_peak_margin": 0.05,
-                "min_drift_std_hz": 0.002,
-                "min_valid_fraction": 0.8,
+                "min_correlation": MIN_CORRELATION,
+                "min_peak_margin": MIN_PEAK_MARGIN,
+                "min_drift_std_hz": MIN_DRIFT_STD_HZ,
+                "min_valid_fraction": MIN_VALID_FRACTION,
             },
             "note": "Candidate alignment only. No absolute timestamp or forensic confidence.",
         }
@@ -135,6 +154,20 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(summary, indent=2, allow_nan=False))
             return 0 if summary["accepted"] else 1
         config = TraceConfig(args.nominal, args.harmonic, args.window, args.hop, args.min_strength)
+        if args.command == "validate":
+            report = validate_recordings(
+                load_manifest(args.manifest),
+                config,
+                channel=args.channel,
+                min_overlap_s=args.min_overlap,
+                max_offset_s=args.max_offset,
+            )
+            args.output.mkdir(parents=True, exist_ok=True)
+            write_pairs(args.output / "pairs.csv", report["pairs"])
+            report["pairs"] = [asdict(pair) for pair in report["pairs"]]
+            write_json(args.output / "validation.json", report)
+            print(json.dumps({k: report[k] for k in ("passed", "summary", "warnings")}, indent=2))
+            return 0 if report["passed"] else 1
         if args.command == "match":
             summary, _, _ = _compare(
                 args.a,

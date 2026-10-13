@@ -1,0 +1,549 @@
+{
+  "dataset": "ENF-WHU, commit 78ed7f3784949f769f291fc1cb94acd10da6322f (MIT licence)",
+  "settings": {
+    "window_s": 16,
+    "hop_s": 1,
+    "min_strength_db": 20,
+    "min_overlap_s": 60.0,
+    "min_correlation": 0.9,
+    "max_offset_s": null,
+    "tolerance_s": 16,
+    "reference_harmonic": 1
+  },
+  "references": {
+    "clips": 130,
+    "median_valid_fraction": 1.0,
+    "clips_at_least_80_percent_valid": 130
+  },
+  "note": "Relative offsets only. No absolute timestamp is inferred.",
+  "harmonic_1": {
+    "recordings": {
+      "clips": 130,
+      "median_valid_fraction": 0.0,
+      "clips_at_least_80_percent_valid": 0
+    },
+    "no_hum": {
+      "clips": 10,
+      "median_valid_fraction": 0.0,
+      "clips_at_least_80_percent_valid": 0
+    },
+    "recording_vs_simultaneous_reference": {
+      "all": {
+        "simultaneous": {
+          "pairs": 130,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 130,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 0,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 0
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      },
+      "development": {
+        "simultaneous": {
+          "pairs": 65,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 65,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 0,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 0
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      },
+      "held_out": {
+        "simultaneous": {
+          "pairs": 65,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 65,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 0,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 0
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      }
+    },
+    "recording_vs_other_day_reference": {
+      "all": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 15614,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 15614
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      },
+      "development": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 3890,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 3890
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      },
+      "held_out": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 3908,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 3908
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      }
+    },
+    "recording_vs_other_day_recording": {
+      "all": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 7807,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 7807
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      },
+      "development": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 1945,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 1945
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      },
+      "held_out": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 1954,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 1954
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      }
+    },
+    "no_hum_recording_vs_reference": {
+      "all": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 1300,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 1300
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      },
+      "development": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 650,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 650
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      },
+      "held_out": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 650,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 650
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      }
+    }
+  },
+  "harmonic_2": {
+    "recordings": {
+      "clips": 130,
+      "median_valid_fraction": 0.5582148578293953,
+      "clips_at_least_80_percent_valid": 46
+    },
+    "no_hum": {
+      "clips": 10,
+      "median_valid_fraction": 0.0,
+      "clips_at_least_80_percent_valid": 0
+    },
+    "recording_vs_simultaneous_reference": {
+      "all": {
+        "simultaneous": {
+          "pairs": 130,
+          "correct": 40,
+          "wrong_offset": 4,
+          "rejected": 19,
+          "no_decision": 67,
+          "accepted_abs_offset_error_s": {
+            "median": 2.0,
+            "p95": 491.9500000000002,
+            "max": 607.0
+          }
+        },
+        "different-time": {
+          "pairs": 0,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 0
+        },
+        "not_tested": 0,
+        "false_matches": 4
+      },
+      "development": {
+        "simultaneous": {
+          "pairs": 65,
+          "correct": 22,
+          "wrong_offset": 3,
+          "rejected": 7,
+          "no_decision": 33,
+          "accepted_abs_offset_error_s": {
+            "median": 2.0,
+            "p95": 484.59999999999957,
+            "max": 607.0
+          }
+        },
+        "different-time": {
+          "pairs": 0,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 0
+        },
+        "not_tested": 0,
+        "false_matches": 3
+      },
+      "held_out": {
+        "simultaneous": {
+          "pairs": 65,
+          "correct": 18,
+          "wrong_offset": 1,
+          "rejected": 12,
+          "no_decision": 34,
+          "accepted_abs_offset_error_s": {
+            "median": 2.0,
+            "p95": 61.399999999998776,
+            "max": 578.0
+          }
+        },
+        "different-time": {
+          "pairs": 0,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 0
+        },
+        "not_tested": 0,
+        "false_matches": 1
+      },
+      "accepted_offset_errors_s": [
+        -607.0,
+        -514.0,
+        -367.0,
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        2.0,
+        2.0,
+        2.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        578.0
+      ]
+    },
+    "recording_vs_other_day_reference": {
+      "all": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 15614,
+          "false_matches": 1815,
+          "rejected": 5680,
+          "no_decision": 8119
+        },
+        "not_tested": 0,
+        "false_matches": 1815
+      },
+      "development": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 3890,
+          "false_matches": 444,
+          "rejected": 1481,
+          "no_decision": 1965
+        },
+        "not_tested": 0,
+        "false_matches": 444
+      },
+      "held_out": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 3908,
+          "false_matches": 467,
+          "rejected": 1349,
+          "no_decision": 2092
+        },
+        "not_tested": 0,
+        "false_matches": 467
+      }
+    },
+    "recording_vs_other_day_recording": {
+      "all": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 7807,
+          "false_matches": 312,
+          "rejected": 1240,
+          "no_decision": 6255
+        },
+        "not_tested": 0,
+        "false_matches": 312
+      },
+      "development": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 1945,
+          "false_matches": 85,
+          "rejected": 333,
+          "no_decision": 1527
+        },
+        "not_tested": 0,
+        "false_matches": 85
+      },
+      "held_out": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 1954,
+          "false_matches": 76,
+          "rejected": 280,
+          "no_decision": 1598
+        },
+        "not_tested": 0,
+        "false_matches": 76
+      }
+    },
+    "no_hum_recording_vs_reference": {
+      "all": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 1300,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 1300
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      },
+      "development": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 650,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 650
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      },
+      "held_out": {
+        "simultaneous": {
+          "pairs": 0,
+          "correct": 0,
+          "wrong_offset": 0,
+          "rejected": 0,
+          "no_decision": 0,
+          "accepted_abs_offset_error_s": null
+        },
+        "different-time": {
+          "pairs": 650,
+          "false_matches": 0,
+          "rejected": 0,
+          "no_decision": 650
+        },
+        "not_tested": 0,
+        "false_matches": 0
+      }
+    }
+  }
+}

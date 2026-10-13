@@ -27,7 +27,7 @@ def test_extreme_window_is_a_clear_input_error(capsys):
 @pytest.mark.parametrize("kind, expected_code", [("silence", 2), ("periodic", 1)])
 def test_unsuccessful_match_exit_codes_and_artifacts(tmp_path, capsys, kind, expected_code):
     rate = 1000
-    time = np.arange(180 * rate) / rate
+    time = np.arange(400 * rate) / rate
     samples = np.zeros(time.size)
     if kind == "periodic":
         frequency = 50 + 0.04 * np.sin(2 * np.pi * time / 40)

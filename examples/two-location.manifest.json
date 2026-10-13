@@ -1,0 +1,28 @@
+{
+  "recordings": [
+    {
+      "id": "home",
+      "path": "../data/raw/two-location/home.m4a",
+      "location": "home",
+      "logged_start": "2026-10-18T19:00:04+11:00",
+      "start_uncertainty_s": 2,
+      "clock": "Phone with automatic network time; screenshot taken when recording started"
+    },
+    {
+      "id": "office",
+      "path": "../data/raw/two-location/office.m4a",
+      "location": "office",
+      "logged_start": "2026-10-18T19:00:31+11:00",
+      "start_uncertainty_s": 2,
+      "clock": "Second phone with automatic network time; logged by a second person"
+    },
+    {
+      "id": "home-control",
+      "path": "../data/raw/two-location/home-control.m4a",
+      "location": "home",
+      "logged_start": "2026-10-19T08:15:00+11:00",
+      "start_uncertainty_s": 2,
+      "clock": "Different-time negative control: same phone, next morning"
+    }
+  ]
+}
